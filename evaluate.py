@@ -16,7 +16,7 @@ def evaluate(estimator, stream):
 
 
 if __name__ == "__main__":
-    stream_size = 100000
+    stream_size = 10000
     key_count = 100
     dists = [
         dist.BinomialDistribution(key_count),
@@ -36,5 +36,5 @@ if __name__ == "__main__":
         dc_error = evaluate(dc, stream)
         t2 = time()
         print(d.__class__.__name__)
-        print("space saving:", ss_error, t1 - t0)
-        print("dist counters:", dc_error, t2 - t1)
+        print("[space saving] error:", round(ss_error,2), "time:", round(t1 - t0,2))
+        print("[dist counters] error:", round(dc_error,2), "time:", round(t2 - t1,2))
