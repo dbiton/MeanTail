@@ -8,7 +8,7 @@ class Distribution:
     def generate(self, n):
         raise NotImplementedError("Generate method not implemented!")
 
-    def probability(self, item):
+    def probability(self, n):
         raise NotImplementedError("Probability method not implemented!")
 
 class NormalDistribution(Distribution):
@@ -20,8 +20,13 @@ class NormalDistribution(Distribution):
     def generate(self, n):
         return np.random.normal(self.mean, self.std, n)
 
-    def probability(self, item):
-        return norm.pdf(item, self.mean, self.std)
+    def probability(self, n):
+        # Assuming n-th most probable integer is around the mean
+        x_values = np.arange(self.mean - 3*self.std, self.mean + 3*self.std, 0.1)
+        probabilities = norm.pdf(x_values, self.mean, self.std)
+        sorted_indices = np.argsort(probabilities)[::-1]
+        n_most_probable_index = sorted_indices[n - 1]
+        return probabilities[n_most_probable_index]
 
 class UniformDistribution(Distribution):
     def __init__(self, range):
@@ -32,8 +37,9 @@ class UniformDistribution(Distribution):
     def generate(self, n):
         return np.random.uniform(self.low, self.high, n)
 
-    def probability(self, item):
-        return uniform.pdf(item, loc=self.low, scale=self.high - self.low)
+    def probability(self, n):
+        # All items have the same probability in uniform distribution
+        return 1 / self.range
 
 class BinomialDistribution(Distribution):
     def __init__(self, range):
@@ -44,8 +50,10 @@ class BinomialDistribution(Distribution):
     def generate(self, n):
         return np.random.binomial(self.trials, self.p, n)
 
-    def probability(self, item):
-        return binom.pmf(item, self.trials, self.p)
+    def probability(self, n):
+        probabilities = [binom.pmf(k, self.trials, self.p) for k in range(self.trials + 1)]
+        sorted_probabilities = sorted(probabilities, reverse=True)
+        return sorted_probabilities[n - 1]
 
 class PoissonDistribution(Distribution):
     def __init__(self, range):
@@ -55,8 +63,13 @@ class PoissonDistribution(Distribution):
     def generate(self, n):
         return np.random.poisson(self.lam, n)
 
-    def probability(self, item):
-        return poisson.pmf(item, self.lam)
+    def probability(self, n):
+        # Since the Poisson distribution is discrete and potentially infinite, we approximate
+        x_values = np.arange(0, 10*self.lam)
+        probabilities = poisson.pmf(x_values, self.lam)
+        sorted_indices = np.argsort(probabilities)[::-1]
+        n_most_probable_index = sorted_indices[n - 1]
+        return probabilities[n_most_probable_index]
 
 class ExponentialDistribution(Distribution):
     def __init__(self, range):
@@ -66,13 +79,18 @@ class ExponentialDistribution(Distribution):
     def generate(self, n):
         return np.random.exponential(self.scale, n)
 
-    def probability(self, item):
-        return expon.pdf(item, scale=self.scale)
+    def probability(self, n):
+        # Assuming n-th most probable integer is around the mode (which is 0 for exponential)
+        x_values = np.linspace(0, 10*self.scale, 1000)
+        probabilities = expon.pdf(x_values, scale=self.scale)
+        sorted_indices = np.argsort(probabilities)[::-1]
+        n_most_probable_index = sorted_indices[n - 1]
+        return probabilities[n_most_probable_index]
 
 # Example usage
 if __name__ == "__main__":
-    n = 10
     range = 10
+    n = 3
 
     distributions = [
         NormalDistribution(range),
@@ -83,7 +101,4 @@ if __name__ == "__main__":
     ]
 
     for dist in distributions:
-        samples = dist.generate(n)
-        probs = [dist.probability(x) for x in samples]
-        print(f"{dist.__class__.__name__} Samples:", samples)
-        print(f"{dist.__class__.__name__} Probabilities:", probs)
+        print(f"{dist.__class__.__name__} {n}-th most probable value probability: {dist.probability(n)}")
