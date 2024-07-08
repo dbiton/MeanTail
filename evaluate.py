@@ -6,6 +6,7 @@ from logger import logger
 from collections import Counter
 from random import randint
 from time import time
+import numpy as np
 
 
 def evaluate(estimator, stream):
@@ -17,8 +18,9 @@ def evaluate(estimator, stream):
 
 
 if __name__ == "__main__":
-    stream_size = 1000
-    key_count = 10
+    np.random.seed(42069)
+    stream_size = 10000
+    key_count = 100
     dists = [
         dist.BinomialDistribution(key_count),
         dist.ExponentialDistribution(key_count),
@@ -28,8 +30,8 @@ if __name__ == "__main__":
     ]
     for d in dists:
         probability_function = d.probability
-        ss = SpaceSaving(3)
-        dc = DistCounters(6, probability_function)
+        ss = SpaceSaving(10)
+        dc = DistCounters(20, probability_function)
         stream = d.generate(stream_size)
         t0 = time()
         ss_error = evaluate(ss, stream)
