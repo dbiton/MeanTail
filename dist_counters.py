@@ -39,7 +39,7 @@ class DistCounters:
       if len(self.keys) < self.size:
         self.keys.append(key)
       else:
-        tresh = self.swap_probability(self.size-1, value)
+        tresh = self.swap_probability(self.size, value)
         if randrange(0, 1) >= tresh:
           self.keys[-1] = key
 
