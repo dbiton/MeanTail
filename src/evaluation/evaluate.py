@@ -1,7 +1,7 @@
 from space_saving import SpaceSaving
 from dist_counters import DistCounters
-import distribution as dist
-from logger import logger
+import src.misc.distribution as dist
+from src.misc.logger import logger
 
 from collections import Counter
 from random import randint
@@ -19,7 +19,7 @@ def evaluate(estimator, stream):
 
 if __name__ == "__main__":
     np.random.seed(42069)
-    stream_size = 10000
+    stream_size = 1000
     key_count = 100
     dists = [
         dist.BinomialDistribution(key_count),
