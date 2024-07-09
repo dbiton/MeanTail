@@ -1,7 +1,13 @@
-from space_saving import SpaceSaving
-from dist_counters import DistCounters
-import src.misc.distribution as dist
-from src.misc.logger import logger
+import sys
+import os
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+from estimators.space_saving import SpaceSaving
+from estimators.dist_counters import DistCounters
+from estimators.count_min import CountMin
+import misc.distribution as dist
+from misc.logger import logger
 
 from collections import Counter
 from random import randint
@@ -19,8 +25,10 @@ def evaluate(estimator, stream):
 
 if __name__ == "__main__":
     np.random.seed(42069)
-    stream_size = 1000
-    key_count = 100
+    stream_size = 500
+    key_count = 50
+    estimator_size = 16
+    cm_depth = 4
     dists = [
         dist.BinomialDistribution(key_count),
         dist.ExponentialDistribution(key_count),
@@ -29,15 +37,15 @@ if __name__ == "__main__":
         dist.UniformDistribution(key_count),
     ]
     for d in dists:
-        probability_function = d.probability
-        ss = SpaceSaving(10)
-        dc = DistCounters(20, probability_function)
-        stream = d.generate(stream_size)
-        t0 = time()
-        ss_error = evaluate(ss, stream)
-        t1 = time()
-        dc_error = evaluate(dc, stream)
-        t2 = time()
         logger.info(d.__class__.__name__)
-        logger.info(f"[space saving] error: {round(ss_error,2)} time: {round(t1 - t0,2)}")
-        logger.info(f"[dist counters] error: {round(dc_error,2)} time: {round(t2 - t1,2)}")
+        probability_function = d.probability
+        ss = SpaceSaving(estimator_size / 2)
+        dc = DistCounters(estimator_size, probability_function)
+        cm = CountMin(estimator_size // cm_depth, cm_depth)
+        stream = d.generate(stream_size)
+        for estimator in [ss, dc, cm]:
+            t0 = time()
+            ss_error = evaluate(estimator, stream)
+            t1 = time()
+            estimator_name = estimator.__class__.__name__
+            logger.info(f"[{estimator_name}] error: {round(ss_error,2)} time: {round(t1 - t0,2)}")
