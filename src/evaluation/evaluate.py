@@ -25,15 +25,13 @@ def evaluate(estimator, stream):
 
 if __name__ == "__main__":
     np.random.seed(42069)
-    stream_size = 500
-    key_count = 50
-    estimator_size = 16
+    stream_size = 5000
+    key_count = 500
+    estimator_size = 160
     cm_depth = 4
     dists = [
-        dist.BinomialDistribution(key_count),
         dist.ExponentialDistribution(key_count),
         dist.NormalDistribution(key_count),
-        dist.PoissonDistribution(key_count),
         dist.UniformDistribution(key_count),
     ]
     for d in dists:
@@ -43,6 +41,7 @@ if __name__ == "__main__":
         dc = DistCounters(estimator_size, probability_function)
         cm = CountMin(estimator_size // cm_depth, cm_depth)
         stream = d.generate(stream_size)
+
         for estimator in [ss, dc, cm]:
             t0 = time()
             ss_error = evaluate(estimator, stream)

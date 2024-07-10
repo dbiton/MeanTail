@@ -2,103 +2,48 @@ import numpy as np
 from scipy.stats import norm, uniform, binom, poisson, expon
 
 class Distribution:
-    def __init__(self, range):
-        self.range = range
+    def __init__(self, probabilities):
+        self.sorted_probabilities = np.sort(probabilities)
 
     def generate(self, n):
         raise NotImplementedError("Generate method not implemented!")
 
     def probability(self, n):
-        raise NotImplementedError("Probability method not implemented!")
+        return self.sorted_probabilities[n]
 
 class NormalDistribution(Distribution):
-    def __init__(self, range):
-        super().__init__(range)
-        self.mean = 0
-        self.std = range / 6
+    def __init__(self, domain, probability_out_of_bound=0.001):
+        self.domain = domain
+
+        self.mean = domain / 2
+        self.std = domain / 8
+
+        x_values = np.arange(domain)
+        probabilities = norm.pdf(x_values, self.mean, self.std)
+        super().__init__(probabilities)
 
     def generate(self, n):
-        return np.random.normal(self.mean, self.std, n)
-
-    def probability(self, n):
-        # Assuming n-th most probable integer is around the mean
-        x_values = np.arange(self.mean - 3*self.std, self.mean + 3*self.std, 0.1)
-        probabilities = norm.pdf(x_values, self.mean, self.std)
-        sorted_indices = np.argsort(probabilities)[::-1]
-        n_most_probable_index = sorted_indices[n - 1]
-        return probabilities[n_most_probable_index]
+        return np.clip(np.round(np.random.normal(self.mean, self.std, n)), 0, self.domain)
 
 class UniformDistribution(Distribution):
-    def __init__(self, range):
-        super().__init__(range)
+    def __init__(self, domain):
         self.low = 0
-        self.high = range
+        self.high = domain
+        probabilities = np.full(domain, 1/domain) 
+        super().__init__(probabilities)
 
     def generate(self, n):
-        return np.random.uniform(self.low, self.high, n)
+        return np.round(np.random.uniform(self.low, self.high, n))
 
-    def probability(self, n):
-        # All items have the same probability in uniform distribution
-        return 1 / self.range
-
-class BinomialDistribution(Distribution):
-    def __init__(self, range):
-        super().__init__(range)
-        self.trials = range
-        self.p = 0.5
-
-    def generate(self, n):
-        return np.random.binomial(self.trials, self.p, n)
-
-    def probability(self, n):
-        probabilities = [binom.pmf(k, self.trials, self.p) for k in range(self.trials + 1)]
-        sorted_probabilities = sorted(probabilities, reverse=True)
-        return sorted_probabilities[n - 1]
-
-class PoissonDistribution(Distribution):
-    def __init__(self, range):
-        super().__init__(range)
-        self.lam = range / 2
-
-    def generate(self, n):
-        return np.random.poisson(self.lam, n)
-
-    def probability(self, n):
-        # Since the Poisson distribution is discrete and potentially infinite, we approximate
-        x_values = np.arange(0, 10*self.lam)
-        probabilities = poisson.pmf(x_values, self.lam)
-        sorted_indices = np.argsort(probabilities)[::-1]
-        n_most_probable_index = sorted_indices[n - 1]
-        return probabilities[n_most_probable_index]
 
 class ExponentialDistribution(Distribution):
-    def __init__(self, range):
-        super().__init__(range)
-        self.scale = range / 2
+    def __init__(self, domain, probability_out_of_bound=0.001):
+        self.scale = - domain / np.log(probability_out_of_bound)
+        x_values = np.arange(domain)
+        probabilities = expon.pdf(x_values)
+        self.domain = domain
+        super().__init__(probabilities)
 
     def generate(self, n):
-        return np.random.exponential(self.scale, n)
+        return np.clip(np.round(np.random.exponential(self.scale, n)), 0, self.domain)
 
-    def probability(self, n):
-        # Assuming n-th most probable integer is around the mode (which is 0 for exponential)
-        x_values = np.linspace(0, 10*self.scale, 1000)
-        probabilities = expon.pdf(x_values, scale=self.scale)
-        sorted_indices = np.argsort(probabilities)[::-1]
-        n_most_probable_index = sorted_indices[n - 1]
-        return probabilities[n_most_probable_index]
-
-# Example usage
-if __name__ == "__main__":
-    range = 10
-    n = 3
-
-    distributions = [
-        NormalDistribution(range),
-        UniformDistribution(range),
-        BinomialDistribution(range),
-        PoissonDistribution(range),
-        ExponentialDistribution(range)
-    ]
-
-    for dist in distributions:
-        print(f"{dist.__class__.__name__} {n}-th most probable value probability: {dist.probability(n)}")
