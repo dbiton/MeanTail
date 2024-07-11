@@ -19,15 +19,16 @@ def evaluate(estimator, stream):
     for e in stream:
         estimator.update(e, 1)
     actual_counts = Counter(stream)
-    differences = [abs(estimator.query(k) - v) for k, v in actual_counts.items()]
-    return sum(differences)
+    estimate_counts = {k: estimator.query(k) for k in actual_counts}
+    diff_counts = {k: abs(estimate_counts[k]-a) for k, a in actual_counts.items()}
+    return sum(diff_counts.values()) / len(actual_counts)
 
 
 if __name__ == "__main__":
     np.random.seed(42069)
-    stream_size = 5000
-    key_count = 500
-    estimator_size = 160
+    stream_size = 50000
+    key_count = 5000
+    estimator_size = 1600
     cm_depth = 4
     dists = [
         dist.ExponentialDistribution(key_count),
@@ -47,4 +48,4 @@ if __name__ == "__main__":
             ss_error = evaluate(estimator, stream)
             t1 = time()
             estimator_name = estimator.__class__.__name__
-            logger.info(f"[{estimator_name}] error: {round(ss_error,2)} time: {round(t1 - t0,2)}")
+            logger.info(f"[{estimator_name}] aae: {round(ss_error,2)} time: {round(t1 - t0,2)}")
