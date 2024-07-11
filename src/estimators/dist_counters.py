@@ -27,10 +27,8 @@ class DistCounters:
         value_small = self.estimate_counter(index)
         value_large = self.estimate_counter(index - 1)
         difference = value_large - value_small
-        if difference < 0:
-            x = 0
         if difference == 0:
-            return 1
+            return 0
         # consider swapping more than a single step up
         probability = min(value / difference, 1)
         return probability
