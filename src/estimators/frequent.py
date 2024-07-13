@@ -1,4 +1,4 @@
-class SpaceSaving:
+class Frequent:
     def __init__(self, size):
         self.decrements = 0
         self.size = size
