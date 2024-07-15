@@ -5,7 +5,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from estimators.space_saving import SpaceSaving
 from estimators.dist_counters import DistCounters
-from estimators.count_min import CountMin
+from estimators.rap import RandomAdmissionPolicy
 import misc.distribution as dist
 from misc.logger import logger
 
@@ -21,17 +21,20 @@ def evaluate(estimator, stream):
         estimator.update(e, 1)
     actual_counts = Counter(stream)
     estimate_counts = {k: estimator.query(k) for k in actual_counts}
-    diff_counts = {k: abs(estimate_counts[k]-a) for k, a in actual_counts.items()}
-    diff_counts_values_sorted = sorted(diff_counts.values(), reverse=True)    
-    return sum(diff_counts.values()) / len(actual_counts), diff_counts_values_sorted
+    errors = {k: abs(estimate_counts[k]-a) for k, a in actual_counts.items()}
+    diff_counts_values_sorted = sorted(errors.values(), reverse=True)    
+    aae = sum(errors.values()) / len(actual_counts)
+    mae = sum([errors[k]/v for k, v in actual_counts.items()]) / len(actual_counts)
+    return aae, mae, diff_counts_values_sorted
 
 
 
 if __name__ == "__main__":
+    np.seterr(all='raise')
     np.random.seed(42069)
-    stream_size = 1000000
-    key_count = 100000
-    estimator_size = 10000
+    stream_size = 100000
+    key_count = 10000
+    estimator_size = 256
     cm_depth = 5
     dists = [
         dist.ExponentialDistribution(key_count),
@@ -45,19 +48,19 @@ if __name__ == "__main__":
         probability_name = d.__class__.__name__
         logger.info(probability_name)
         probability_function = d.probability
-        ss = SpaceSaving(estimator_size // 1.5)
-        dc = DistCounters(estimator_size, probability_function)
-        cm = CountMin(estimator_size // cm_depth, cm_depth)
+        ss = SpaceSaving(estimator_size)
+        dc = DistCounters(estimator_size * 1.5, probability_function)
+        cm = RandomAdmissionPolicy(estimator_size)
         stream = d.generate(stream_size)
 
         data[probability_name] = {}
         
         for estimator in [ss, dc, cm]:
             t0 = time()
-            ss_error, deltas = evaluate(estimator, stream)
+            aae, mae, deltas = evaluate(estimator, stream)
             t1 = time()
             estimator_name = estimator.__class__.__name__
-            logger.info(f"[{estimator_name}] aae: {round(ss_error,2)} time: {round(t1 - t0,2)}")
+            logger.info(f"[{estimator_name}] aae: {round(aae,2)} mae: {round(mae,2)} time: {round(t1 - t0,2)}")
             data[probability_name][estimator_name] = deltas
     
     fig, axs = plt.subplots(nrows=len(data),ncols=len(data), figsize=(10, 10))
