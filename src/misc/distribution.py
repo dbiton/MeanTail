@@ -37,10 +37,11 @@ class UniformDistribution(Distribution):
 
 
 class ExponentialDistribution(Distribution):
-    def __init__(self, domain, probability_out_of_bound=0.001):
-        self.scale = - domain / np.log(probability_out_of_bound)
-        x_values = np.arange(domain)
+    def __init__(self, domain, probability_out_of_bound=0.01):
+        self.scale = - domain / np.log(1-probability_out_of_bound)
+        x_values = np.arange(1, domain + 1)
         probabilities = expon.pdf(x_values)
+        probabilities *= 1 / sum(probabilities) # normalize
         self.domain = domain
         super().__init__(probabilities)
 
