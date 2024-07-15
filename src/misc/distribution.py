@@ -3,7 +3,7 @@ from scipy.stats import norm, uniform, binom, poisson, expon
 
 class Distribution:
     def __init__(self, probabilities):
-        self.sorted_probabilities = np.sort(probabilities)
+        self.sorted_probabilities = sorted(probabilities, reverse=True)
 
     def generate(self, n):
         raise NotImplementedError("Generate method not implemented!")
@@ -37,14 +37,14 @@ class UniformDistribution(Distribution):
 
 
 class ExponentialDistribution(Distribution):
-    def __init__(self, domain, probability_out_of_bound=0.01):
-        self.scale = - domain / np.log(1-probability_out_of_bound)
-        x_values = np.arange(1, domain + 1)
+    def __init__(self, domain, probability_out_of_bounds=0.01):
+        self.upper_bound = -np.log(probability_out_of_bounds)
+        x_values = np.linspace(0, self.upper_bound, domain)
         probabilities = expon.pdf(x_values)
         probabilities *= 1 / sum(probabilities) # normalize
         self.domain = domain
         super().__init__(probabilities)
 
     def generate(self, n):
-        return np.clip(np.round(np.random.exponential(self.scale, n)), 0, self.domain)
+        return np.clip(np.round(self.domain / self.upper_bound * np.random.exponential(1, n)), 0, self.domain)
 
