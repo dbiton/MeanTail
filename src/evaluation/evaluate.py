@@ -72,9 +72,9 @@ def narrow():
 
 def broad():
     min_stream_size = 1000
-    max_stream_size = 100000
-    key_count = 1000
-    estimator_size = 256
+    max_stream_size = 10000
+    key_count = 10000
+    estimator_size = 1000
     data_points = 16
     dists = [
         dist.ExponentialDistribution(key_count),
@@ -112,6 +112,7 @@ def broad():
             streamsizes = [p[0] for p in data[probability_name][estimator_name]]
             ares = [p[1] for p in data[probability_name][estimator_name]]
             axs[i_prob].plot(streamsizes, ares, label=estimator_name)
+    plt.grid()
     plt.legend()
     plt.tight_layout()
     plt.show()

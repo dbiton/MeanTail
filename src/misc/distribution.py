@@ -1,5 +1,6 @@
 import numpy as np
-from scipy.stats import norm, uniform, binom, poisson, expon
+import scipy
+from scipy.stats import norm, uniform, binom, poisson, expon, zipf
 
 class Distribution:
     def __init__(self, probabilities):
@@ -48,3 +49,17 @@ class ExponentialDistribution(Distribution):
     def generate(self, n):
         return np.clip(np.round(self.domain / self.upper_bound * np.random.exponential(1, n)), 0, self.domain)
 
+class ZipfianDistribution(Distribution):
+    def __init__(self, domain, a=1.5):
+        self.domain = domain
+        self.a = a
+        super().__init__([])
+   
+    def probability(self, n):
+        H_N_a = scipy.special.zetac(self.a) + 1  # zetac(a) gives H(∞, a) - 1
+        # Calculate the probability
+        P_n = (1 / n**self.a) / H_N_a
+        return P_n    
+    
+    def generate(self, n):
+        return np.random.zipf(self.s, n) % self.domain
