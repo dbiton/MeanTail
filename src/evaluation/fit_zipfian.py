@@ -52,7 +52,7 @@ def estimate_params(packets: list):
     plt.title('Various Distribution Fits')
     plt.legend()
     plt.grid(True)
-    plt.show()
+    # plt.show()
     
     print(f"SSR for Zipfian fit: {zipfian_ssr:.4f}")
     print(f"SSR for Power law fit: {power_law_ssr:.4f}")
