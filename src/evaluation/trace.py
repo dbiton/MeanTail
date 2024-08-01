@@ -11,7 +11,7 @@ from estimators.dist_counters import DistCounters
 from estimators.rap import RandomAdmissionPolicy
 from estimators.space_saving import SpaceSaving
 import misc.distribution as dist
-from evaluation.fit_zipfian import estimate_zipfian_param
+from evaluation.fit_zipfian import estimate_params
 
 def read_trace(file_path, n=None):
     with open(file_path, "r") as file:
@@ -80,4 +80,8 @@ def plot_results(results):
     plt.show()
 
 if __name__ == "__main__":
-    main()
+    trace_len = 1000000
+    trace_file = "C:\\Users\\Dvir\\Desktop\\Projects\\DistCounters\\traces\\nyc.txt"
+    trace = read_trace(trace_file, trace_len)
+    zipf_param = estimate_params(trace)
+    # main()
