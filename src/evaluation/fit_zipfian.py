@@ -4,6 +4,7 @@ from scipy.optimize import curve_fit
 from scipy.special import zetac
 import matplotlib.pyplot as plt
 from scipy.stats import lognorm
+from scipy.integrate import quad
 
 # Define the fitting functions
 def zipfian_fit(x, a):
@@ -14,6 +15,14 @@ def power_law_fit(x, a, b):
 
 def lognormal_fit(x, s, scale):
     return lognorm.pdf(x, s, scale=scale)
+
+def lognormal_integer_fit(x, s, scale):
+    # Define the PDF function
+    def pdf(t):
+        return lognorm.pdf(t, s, scale=scale)
+    # Integrate the PDF over the interval [x, x+1]
+    total_probability, _ = quad(pdf, x, x + 1)
+    return total_probability
 
 def estimate_params(packets: list):
     counter = Counter(packets)
@@ -40,19 +49,19 @@ def estimate_params(packets: list):
     lognormal_ssr = np.sum(lognormal_residuals**2)
     
     # Plot the data and the fitted curves
-    plt.figure(figsize=(10, 6))
+    '''plt.figure(figsize=(10, 6))
     plt.plot(rank, frequency, 'b-', label='Data')
     plt.plot(rank, zipfian_fit(rank, *zipf_params), 'r--', label=f'Zipfian fit (a={a_zipf:.2f})')
     plt.plot(rank, power_law_fit(rank, *power_law_params), 'g:', label=f'Power law fit (a={a_power_law:.2f}, b={b_power_law:.2f})')
     plt.plot(rank, lognormal_fit(rank, *lognormal_params), 'y-', label=f'Log-normal fit (s={s_lognormal:.2f}, scale={scale_lognormal:.2f})')
-    # plt.xscale('log')
+    plt.xscale('log')
     plt.yscale('log')
     plt.xlabel('Rank')
     plt.ylabel('Frequency')
     plt.title('Various Distribution Fits')
     plt.legend()
     plt.grid(True)
-    # plt.show()
+    plt.show()'''
     
     print(f"SSR for Zipfian fit: {zipfian_ssr:.4f}")
     print(f"SSR for Power law fit: {power_law_ssr:.4f}")
