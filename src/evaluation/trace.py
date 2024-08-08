@@ -13,7 +13,7 @@ from estimators.auto_dist_counters import AutoDistCounters
 from estimators.rap import RandomAdmissionPolicy
 from estimators.space_saving import SpaceSaving
 import misc.distribution as dist
-from evaluation.fit_zipfian import estimate_params, lognormal_integer_fit
+from evaluation.fit_zipfian import estimate_params, lognormal_fit
 
 def read_trace(file_path, n=None):
     with open(file_path, "r") as file:
@@ -23,7 +23,7 @@ def read_trace(file_path, n=None):
             return [int(line.strip()) for line in file]
 
 def evaluate(estimator, stream):
-    for e in stream:
+    for i, e in enumerate(stream):
         estimator.update(e, 1)
     actual_counts = Counter(stream)
     estimate_counts = {k: estimator.query(k) for k in actual_counts}
@@ -48,12 +48,13 @@ def sort_results_by_estimator_length(results):
     return results
 
 def main():
-    trace_file = ".\\traces\\nyc.txt"
-    trace_len = 1000
-    step_size = 0.05
-    trace_ratios = np.arange(step_size, 0.25, step_size)
+    trace_file = "src/traces/trace.txt"
+    trace_len = 100000
+    max_ratio = 0.1
+    step_size = max_ratio / 20
+    trace_ratios = np.arange(step_size, max_ratio, step_size)
 
-    results = {'Estimator Length': [], 'DistCounters': [], 'RAP': [], 'SpaceSaving': [], 'DistCountersLimit': []}
+    results = {'Estimator Length': [], 'AutoDistCounters': [], 'DistCounters': [], 'RAP': [], 'SpaceSaving': [], 'DistCountersLimit': []}
 
     with ProcessPoolExecutor() as executor:
         futures = []
@@ -64,6 +65,7 @@ def main():
             iter_result = future.result()
             results['Estimator Length'].append(iter_result['EST LEN'])
             results['DistCounters'].append(iter_result['DC ARE'])
+            results['AutoDistCounters'].append(iter_result['ADC ARE'])
             results['DistCountersLimit'].append(iter_result['DC LIMIT LOGNORM'])
             results['RAP'].append(iter_result['RAP ARE'])
             results['SpaceSaving'].append(iter_result['SS ARE'])
@@ -74,9 +76,10 @@ def main():
 def dc_best_possible_are(stream, prob, estimator_length):
     actual_counts = Counter(stream)
     estimate_counts = {k: 0 for k in actual_counts}
+    logger.info(f"stream unique counts {len(actual_counts)}")
     for n, (k, _) in enumerate(actual_counts.most_common()):
         if n < estimator_length:
-            estimate_counts[k] = prob(n+1) * len(stream)
+            estimate_counts[k] = prob(n) * len(stream)
         else:
             break
     errors = {k: abs(estimate_counts[k] - a) for k, a in actual_counts.items()}
@@ -91,43 +94,48 @@ def process_trace(trace_file, trace_len, trace_ratio):
     zipf_param = params["Zipfian"]
     log_normal_param = params["Log-normal"]
     estimator_size = trace_ratio * trace_len
-    adc = AutoDistCounters(estimator_size * 2)
     rap = RandomAdmissionPolicy(estimator_size)
     ss = SpaceSaving(estimator_size)
     # logger.info('zipfian errors:')
     # dc_limit_zipfian = dc_best_possible_are(trace, probability_function, estimator_size * 2)
-    log_normal_function = lambda x: lognormal_integer_fit(x, log_normal_param[0], log_normal_param[1])
+    log_normal_function = lambda x: lognormal_fit(x, log_normal_param[0], log_normal_param[1])
     logger.info('checking lognormal errors...')
     dc_limit_log_normal = dc_best_possible_are(trace, log_normal_function, estimator_size * 2)
+    adc = AutoDistCounters(estimator_size * 2)
+    dc = DistCounters(estimator_size * 2, log_normal_function)
+    logger.info('eval dc...')
+    dc_result = evaluate(dc, trace)
     logger.info('eval adc...')
     adc_result = evaluate(adc, trace)
     logger.info('eval rap...')
     rap_result = evaluate(rap, trace)
     logger.info('eval ss...')
     ss_result = evaluate(ss, trace)
-    result = {"TRACE LEN": trace_len, "DC ARE": adc_result, "DC LIMIT LOGNORM": dc_limit_log_normal, "RAP ARE": rap_result, "SS ARE": ss_result, "EST LEN": estimator_size}
+    result = {"TRACE LEN": trace_len, "DC ARE": dc_result, "DC LIMIT LOGNORM": dc_limit_log_normal, "RAP ARE": rap_result, "ADC ARE": adc_result, "SS ARE": ss_result, "EST LEN": estimator_size}
     logger.info(result)
     return result 
 
 def plot_results(results):
     trace_lengths = results['Estimator Length']
-    dist_counters_are = [result[0] for result in results['DistCounters']]
+    dc_are = [result[0] for result in results['DistCounters']]
+    adc_are = [result[0] for result in results['AutoDistCounters']]
     rap_are = [result[0] for result in results['RAP']]
     ss_are = [result[0] for result in results['SpaceSaving']]
     dc_limit_are = [result for result in results['DistCountersLimit']]
     
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 10))
+    fig, ax = plt.subplots(figsize=(10, 10))
     
     # Subplot 1: ARE
-    ax1.plot(trace_lengths, dist_counters_are, label='DistCounters', marker='o')
-    ax1.plot(trace_lengths, rap_are, label='RAP', marker='x')
-    ax1.plot(trace_lengths, ss_are, label='SpaceSaving', marker='s')
-    ax1.plot(trace_lengths, dc_limit_are, label='DistCountersLimit', marker='D')
-    ax1.set_xlabel('Estimator Length')
-    ax1.set_ylabel('ARE (Average Relative Error)')
-    ax1.set_title('ARE (Average Relative Error) Comparison')
-    ax1.legend()
-    ax1.grid(True)
+    ax.plot(trace_lengths, dc_are, label='DistCounters', marker='o')
+    ax.plot(trace_lengths, adc_are, label='AutoDistCounters', marker='s')
+    ax.plot(trace_lengths, rap_are, label='RAP', marker='x')
+    ax.plot(trace_lengths, ss_are, label='SpaceSaving', marker='s')
+    ax.plot(trace_lengths, dc_limit_are, label='DistCountersLimit', marker='D')
+    ax.set_xlabel('Estimator Length')
+    ax.set_ylabel('ARE (Average Relative Error)')
+    ax.set_title('ARE (Average Relative Error) Comparison')
+    ax.legend()
+    ax.grid(True)
     
     plt.tight_layout()
     plt.show()

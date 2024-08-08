@@ -1,5 +1,5 @@
 import math
-from random import randrange
+from random import random
 from scipy.stats import lognorm
 from scipy.integrate import quad
 import numpy as np
@@ -13,12 +13,12 @@ class AutoDistCounters:
         self.size = size
         self.keys = []
 
-    def update_distribution(self, key):
+    def update_distribution(self, index):
         self.total_counter += 1
-        log_key = math.log(key)
+        log_index = math.log(index+1)
         old_mean = self.mean
-        self.mean += (log_key - self.mean) / self.total_counter
-        self.variance += (log_key - old_mean) * (log_key - self.mean)
+        self.mean += (log_index - self.mean) / self.total_counter
+        self.variance += (log_index - old_mean) * (log_index - self.mean)
 
     def estimate_counter(self, index):
         if index <= 0:
@@ -36,7 +36,7 @@ class AutoDistCounters:
             self.swap(curr_index)
             curr_index -= 1
             tresh = self.swap_probability(curr_index, value)
-        if randrange(0, 1) < tresh and curr_index > 0:
+        if random() < tresh and curr_index > 0:
             self.swap(curr_index)
 
     def swap_probability(self, index, value):
@@ -57,10 +57,10 @@ class AutoDistCounters:
         self.keys[index - 1] = tmp
 
     def update(self, key, value):
-        for _ in range(value):
-            self.update_distribution(key)
-        if self.keys.count(key) > 0:
+        if key in self.keys:
             index = self.keys.index(key)
+            for _ in range(value):
+                self.update_distribution(index)
             if index > 0:
                 self.rebalance_estimate(index, value)
         else:
@@ -70,9 +70,9 @@ class AutoDistCounters:
                 self.keys.pop()
 
     def query(self, key):
-        if self.keys.count(key) > 0:
+        if key in self.keys:
             index = self.keys.index(key)
             estimate = self.estimate_counter(index + 1)
-            return estimate
+            return max(1, round(estimate))
         else:
             return 0

@@ -53,6 +53,6 @@ class DistCounters:
     def query(self, key):
         if key in self.keys:
             index = self.keys.index(key)
-            return self.estimate_counter(index)
+            return max(1,round(self.estimate_counter(index)))
         else:
             return 0
