@@ -26,8 +26,8 @@ class AutoDistCounters:
         stddev = np.sqrt(self.variance)
         scale = np.exp(self.mean)
         pdf = lognorm(s=stddev, scale=scale).pdf
-        pmf_value, _ = quad(pdf, index - 0.5, index + 0.5)
-        return pmf_value
+        pmf_value, _ = quad(pdf, index, index + 1)
+        return pmf_value * self.total_counter
 
     def rebalance_estimate(self, index, value):
         curr_index = index
@@ -59,7 +59,6 @@ class AutoDistCounters:
     def update(self, key, value):
         for _ in range(value):
             self.update_distribution(key)
-        self.total_counter += value
         if self.keys.count(key) > 0:
             index = self.keys.index(key)
             if index > 0:
@@ -74,8 +73,6 @@ class AutoDistCounters:
         if self.keys.count(key) > 0:
             index = self.keys.index(key)
             estimate = self.estimate_counter(index + 1)
-            if estimate is math.nan:
-                x = 3
             return estimate
         else:
             return 0
