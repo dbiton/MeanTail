@@ -1,7 +1,7 @@
 import sys
 import os
 from collections import Counter
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, as_completed
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -9,6 +9,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from misc.logger import logger
 from estimators.dist_counters import DistCounters
+from estimators.auto_dist_counters import AutoDistCounters
 from estimators.rap import RandomAdmissionPolicy
 from estimators.space_saving import SpaceSaving
 import misc.distribution as dist
@@ -47,14 +48,14 @@ def sort_results_by_estimator_length(results):
     return results
 
 def main():
-    trace_file = "E:\\traces\\nyc.txt"
+    trace_file = ".\\traces\\nyc.txt"
     trace_len = 1000
     step_size = 0.05
     trace_ratios = np.arange(step_size, 0.25, step_size)
 
     results = {'Estimator Length': [], 'DistCounters': [], 'RAP': [], 'SpaceSaving': [], 'DistCountersLimit': []}
 
-    with ThreadPoolExecutor(1) as executor:
+    with ProcessPoolExecutor() as executor:
         futures = []
         for trace_ratio in trace_ratios:
             futures.append(executor.submit(process_trace, trace_file, trace_len, trace_ratio))
@@ -73,14 +74,11 @@ def main():
 def dc_best_possible_are(stream, prob, estimator_length):
     actual_counts = Counter(stream)
     estimate_counts = {k: 0 for k in actual_counts}
-    
     for n, (k, _) in enumerate(actual_counts.most_common()):
         if n < estimator_length:
             estimate_counts[k] = prob(n+1) * len(stream)
-            print(estimate_counts[k], actual_counts[k])
         else:
             break
-    
     errors = {k: abs(estimate_counts[k] - a) for k, a in actual_counts.items()}
     are = sum([errors[k] / v for k, v in actual_counts.items()]) / len(actual_counts)
     return are
@@ -92,19 +90,24 @@ def process_trace(trace_file, trace_len, trace_ratio):
     params = estimate_params(trace)
     zipf_param = params["Zipfian"]
     log_normal_param = params["Log-normal"]
-    logger.info(f"zipf parameter is {zipf_param}")
-    probability_function = dist.ZipfianDistribution(None, zipf_param).probability
     estimator_size = trace_ratio * trace_len
-    dc = DistCounters(estimator_size * 2, probability_function)
+    adc = AutoDistCounters(estimator_size * 2)
     rap = RandomAdmissionPolicy(estimator_size)
     ss = SpaceSaving(estimator_size)
-    dc_limit_zipfian = dc_best_possible_are(trace, probability_function, estimator_size * 2)
+    # logger.info('zipfian errors:')
+    # dc_limit_zipfian = dc_best_possible_are(trace, probability_function, estimator_size * 2)
     log_normal_function = lambda x: lognormal_integer_fit(x, log_normal_param[0], log_normal_param[1])
+    logger.info('checking lognormal errors...')
     dc_limit_log_normal = dc_best_possible_are(trace, log_normal_function, estimator_size * 2)
-    dc_result = evaluate(dc, trace)
+    logger.info('eval adc...')
+    adc_result = evaluate(adc, trace)
+    logger.info('eval rap...')
     rap_result = evaluate(rap, trace)
+    logger.info('eval ss...')
     ss_result = evaluate(ss, trace)
-    return {"TRACE LEN": trace_len, "DC ARE": dc_result, "DC LIMIT ZIPF": dc_limit_zipfian, "DC LIMIT LOGNORM": dc_limit_log_normal, "RAP ARE": rap_result, "SS ARE": ss_result, "EST LEN": estimator_size}
+    result = {"TRACE LEN": trace_len, "DC ARE": adc_result, "DC LIMIT LOGNORM": dc_limit_log_normal, "RAP ARE": rap_result, "SS ARE": ss_result, "EST LEN": estimator_size}
+    logger.info(result)
+    return result 
 
 def plot_results(results):
     trace_lengths = results['Estimator Length']
