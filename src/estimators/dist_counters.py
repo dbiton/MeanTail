@@ -4,8 +4,8 @@ from random import random
 class DistCounters:
     def __init__(self, size, distribution):
         self.distribution = distribution
-        self.size = size
-        self.keys = []
+        self.size = int(size)
+        self.keys = [None for _ in range(self.size + 1)]
         self.total_counter = 0
 
     def estimate_counter(self, index):
@@ -24,6 +24,9 @@ class DistCounters:
     def swap_probability(self, index, value):
         if index == 0:
             return 0
+        assert(self.keys[index] is not None)
+        if self.keys[index-1] is None:
+            return 1
         value_small = self.estimate_counter(index)
         value_large = self.estimate_counter(index - 1)
         difference = value_large - value_small
@@ -43,10 +46,9 @@ class DistCounters:
             if index > 0:
                 self.rebalance_estimate(index, value)
         else:
-            self.keys.append(key)
+            self.keys[-1] = key
             self.rebalance_estimate(len(self.keys)-1, value)
-            while len(self.keys) >= self.size:
-                self.keys.pop()
+            self.keys[-1] = None
 
     def query(self, key):
         if key in self.keys:

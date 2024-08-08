@@ -1,7 +1,12 @@
+import sys
+import os
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 import unittest
 from random import randint
 
-from dist_counters import DistCounters
+from estimators.dist_counters import DistCounters
 
 class TestDistCountersSingular(unittest.TestCase):
 
