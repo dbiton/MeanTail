@@ -1,4 +1,4 @@
-from random import randrange
+from random import random
 
 
 class DistCounters:
@@ -9,7 +9,7 @@ class DistCounters:
         self.total_counter = 0
 
     def estimate_counter(self, index):
-        return self.distribution(index + 1) * self.total_counter
+        return self.distribution(index) * self.total_counter
 
     def rebalance_estimate(self, index, value):
         curr_index = index
@@ -18,7 +18,7 @@ class DistCounters:
             self.swap(curr_index)
             curr_index -= 1
             tresh = self.swap_probability(curr_index, value)
-        if randrange(0, 1) < tresh and curr_index > 0:
+        if random() < tresh and curr_index > 0:
             self.swap(curr_index)
 
     def swap_probability(self, index, value):
@@ -34,15 +34,11 @@ class DistCounters:
         return probability
 
     def swap(self, index):
-        tmp = self.keys[index]
-        if len(self.keys) < index:
-            x = 3
-        self.keys[index] = self.keys[index - 1]
-        self.keys[index - 1] = tmp
+        self.keys[index], self.keys[index - 1] = self.keys[index - 1], self.keys[index]
 
     def update(self, key, value):
         self.total_counter += value
-        if self.keys.count(key) > 0:
+        if key in self.keys:
             index = self.keys.index(key)
             if index > 0:
                 self.rebalance_estimate(index, value)
@@ -53,7 +49,7 @@ class DistCounters:
                 self.keys.pop()
 
     def query(self, key):
-        if self.keys.count(key) > 0:
+        if key in self.keys:
             index = self.keys.index(key)
             return self.estimate_counter(index)
         else:
