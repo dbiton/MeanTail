@@ -26,7 +26,7 @@ class AutoDistCounters:
         stddev = np.sqrt(self.variance)
         scale = np.exp(self.mean)
         pdf = lognorm(s=stddev, scale=scale).pdf
-        pmf_value = pdf(index + 1) - pdf(index)
+        pmf_value = pdf(index) - pdf(index + 1)
         return pmf_value * self.total_counter
 
     def rebalance_estimate(self, index, value):

@@ -48,8 +48,9 @@ def estimate_params(packets: list):
     lognormal_residuals = frequency - lognormal_fit(rank, *lognormal_params)
     lognormal_ssr = np.sum(lognormal_residuals**2)
     
+    '''
     # Plot the data and the fitted curves
-    '''plt.figure(figsize=(10, 6))
+    plt.figure(figsize=(10, 6))
     plt.plot(rank, frequency, 'b-', label='Data')
     plt.plot(rank, zipfian_fit(rank, *zipf_params), 'r--', label=f'Zipfian fit (a={a_zipf:.2f})')
     plt.plot(rank, power_law_fit(rank, *power_law_params), 'g:', label=f'Power law fit (a={a_power_law:.2f}, b={b_power_law:.2f})')
@@ -61,11 +62,12 @@ def estimate_params(packets: list):
     plt.title('Various Distribution Fits')
     plt.legend()
     plt.grid(True)
-    plt.show()'''
+    plt.show()
     
     print(f"SSR for Zipfian fit: {zipfian_ssr:.4f}")
     print(f"SSR for Power law fit: {power_law_ssr:.4f}")
     print(f"SSR for Log-normal fit: {lognormal_ssr:.4f}")
+    '''
     
     return {
         "Zipfian": a_zipf,
