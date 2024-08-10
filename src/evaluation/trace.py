@@ -49,9 +49,9 @@ def sort_results_by_estimator_length(results):
 
 def main():
     trace_file = "src/traces/trace.txt"
-    trace_len = 100000
+    trace_len = 4000
     max_ratio = 0.1
-    step_size = max_ratio / 20
+    step_size = max_ratio / 10
     trace_ratios = np.arange(step_size, max_ratio, step_size)
 
     results = {'Estimator Length': [], 'AutoDistCounters': [], 'DistCounters': [], 'RAP': [], 'SpaceSaving': [], 'DistCountersLimit': []}
@@ -101,8 +101,8 @@ def process_trace(trace_file, trace_len, trace_ratio):
     log_normal_function = lambda x: lognormal_fit(x, log_normal_param[0], log_normal_param[1])
     logger.info('checking lognormal errors...')
     dc_limit_log_normal = dc_best_possible_are(trace, log_normal_function, estimator_size * 2)
-    adc = AutoDistCounters(estimator_size * 2)
-    dc = DistCounters(estimator_size * 2, log_normal_function)
+    adc = AutoDistCounters(int(estimator_size * 2))
+    dc = DistCounters(int(estimator_size * 2), log_normal_function)
     logger.info('eval dc...')
     dc_result = evaluate(dc, trace)
     logger.info('eval adc...')
