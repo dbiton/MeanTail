@@ -13,6 +13,7 @@ class DistCounters:
         self.total_counter = 0
         self.size = 0
         self.keys = np.full(size + 1, NONE_INT, dtype=np.uint64)
+        self.keys_indice = dict()
 
     def estimate_counter(self, index):
         pmf_value = self.dist(index) - self.dist(index+1)
@@ -40,6 +41,9 @@ class DistCounters:
 
     def swap(self, index):
         self.keys[index], self.keys[index - 1] = self.keys[index - 1], self.keys[index]
+        self.keys_indice[self.keys[index]] = index
+        self.keys_indice[self.keys[index-1]] = index - 1
+
 
     def update(self, key, value):
         index = self.find_index_of_key(key)
@@ -50,15 +54,18 @@ class DistCounters:
         else:
             self.keys[self.size] = key
             self.rebalance_estimate(self.size, 1)
-            self.keys[-1] = NONE_INT
+            if self.keys[-1] != NONE_INT:
+                del self.keys_indice[self.keys[-1]]
+                self.keys[-1] = NONE_INT
             self.size = min(len(self.keys) - 1, self.size + 1)
 
 
     def find_index_of_key(self, key):
-        if self.keys[0] == key:
-            return 0
-        i_cand = np.argmax(self.keys == key)
-        return i_cand if i_cand != 0 else NONE_INT            
+        if key not in self.keys_indice:
+            return NONE_INT
+        else:
+            return self.keys_indice[key]
+               
                          
     def query(self, key):
         index = self.find_index_of_key(key)

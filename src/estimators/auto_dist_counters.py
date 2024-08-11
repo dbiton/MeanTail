@@ -14,6 +14,7 @@ class AutoDistCounters:
         self.total_counter = 0
         self.size = 0
         self.keys = np.full(size + 1, NONE_INT, dtype=np.uint64)
+        self.keys_indice = dict()
 
     def update_distribution(self, index):
         self.total_counter += 1
@@ -22,11 +23,17 @@ class AutoDistCounters:
         self.mean += (log_index - self.mean) / self.total_counter
         self.variance += (log_index - old_mean) * (log_index - self.mean)
 
+    @staticmethod
+    def lognormal_pdf(x, stddev, scale):
+        mu = np.log(scale)  # Convert scale to mean of the underlying normal distribution
+        sigma = stddev  # Standard deviation of the underlying normal distribution
+        return (1 / (x * sigma * np.sqrt(2 * np.pi))) * \
+            np.exp(-0.5 * ((np.log(x) - mu) ** 2) / (sigma ** 2))
+
     def estimate_counter(self, index):
         stddev = np.sqrt(self.variance)
         scale = np.exp(self.mean)
-        pdf = lognorm(s=stddev, scale=scale).pdf
-        pmf_value = pdf(index) - pdf(index + 1)
+        pmf_value = self.lognormal_pdf(index, stddev, scale) - self.lognormal_pdf(index + 1, stddev, scale)
         return pmf_value * self.total_counter
 
     def rebalance_estimate(self, index, value):
@@ -51,6 +58,7 @@ class AutoDistCounters:
 
     def swap(self, index):
         self.keys[index], self.keys[index - 1] = self.keys[index - 1], self.keys[index]
+        self.keys_indice[self.keys[index]], self.keys_indice[self.keys[index-1]] = index, index - 1
 
     def update(self, key, value):
         index = self.find_index_of_key(key)
@@ -60,17 +68,20 @@ class AutoDistCounters:
                 self.rebalance_estimate(index, 1)
         else:
             self.keys[self.size] = key
+            self.keys_indice[key] = self.size
             self.rebalance_estimate(self.size, 1)
-            self.keys[-1] = NONE_INT
+            if self.keys[-1] != NONE_INT:
+                del self.keys_indice[self.keys[-1]]
+                self.keys[-1] = NONE_INT
             self.size = min(len(self.keys) - 1, self.size + 1)
 
 
     def find_index_of_key(self, key):
-        if self.keys[0] == key:
-            return 0
-        i_cand = np.argmax(self.keys == key)
-        return i_cand if i_cand != 0 else NONE_INT            
-                         
+        if key not in self.keys_indice:
+            return NONE_INT
+        else:
+            return self.keys_indice[key]       
+
     def query(self, key):
         index = self.find_index_of_key(key)
         if index == NONE_INT:
