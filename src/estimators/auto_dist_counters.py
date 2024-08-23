@@ -1,8 +1,7 @@
 import math
 from random import random
-from scipy.stats import lognorm
-from scipy.integrate import quad
 import numpy as np
+import scipy.stats as stats
 
 NONE_INT = np.iinfo(np.uint64).max
 
@@ -17,23 +16,21 @@ class AutoDistCounters:
         self.keys_indice = dict()
 
     def update_distribution(self, index):
-        self.total_counter += 1
         log_index = math.log(index + 1)
-        old_mean = self.mean
-        self.mean += (log_index - self.mean) / self.total_counter
-        self.variance += (log_index - old_mean) * (log_index - self.mean)
-
-    @staticmethod
-    def lognormal_pdf(x, stddev, scale):
-        mu = np.log(scale)  # Convert scale to mean of the underlying normal distribution
-        sigma = stddev  # Standard deviation of the underlying normal distribution
-        return (1 / (x * sigma * np.sqrt(2 * np.pi))) * \
-            np.exp(-0.5 * ((np.log(x) - mu) ** 2) / (sigma ** 2))
+        self.total_counter += 1
+        delta = log_index - self.mean
+        self.mean += delta / self.total_counter
+        delta2 = log_index - self.mean
+        self.variance += delta * delta2
+    
+    def normal_cdf(self, x):
+        std_dev = math.sqrt(self.variance)
+        return stats.norm.cdf(x, loc=self.mean, scale=std_dev)
 
     def estimate_counter(self, index):
-        stddev = np.sqrt(self.variance)
-        scale = np.exp(self.mean)
-        pmf_value = self.lognormal_pdf(index, stddev, scale) - self.lognormal_pdf(index + 1, stddev, scale)
+        log_index_min = math.log(index + 0.5)
+        log_index_max = math.log(index + 1.5)
+        pmf_value = self.normal_cdf(log_index_max) - self.normal_cdf(log_index_min)
         return pmf_value * self.total_counter
 
     def rebalance_estimate(self, index, value):
