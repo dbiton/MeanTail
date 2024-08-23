@@ -49,7 +49,7 @@ def sort_results_by_estimator_length(results):
 
 def main():
     trace_file = "src/traces/trace.txt"
-    trace_len = 4000
+    trace_len = 100000
     max_ratio = 0.1
     step_size = max_ratio / 10
     trace_ratios = np.arange(step_size, max_ratio, step_size)
@@ -96,15 +96,13 @@ def process_trace(trace_file, trace_len, trace_ratio):
     estimator_size = trace_ratio * trace_len
     rap = RandomAdmissionPolicy(estimator_size)
     ss = SpaceSaving(estimator_size)
-    # logger.info('zipfian errors:')
-    # dc_limit_zipfian = dc_best_possible_are(trace, probability_function, estimator_size * 2)
     log_normal_function = lambda x: lognormal_fit(x, log_normal_param[0], log_normal_param[1])
     logger.info('checking lognormal errors...')
-    dc_limit_log_normal = dc_best_possible_are(trace, log_normal_function, estimator_size * 2)
-    adc = AutoDistCounters(int(estimator_size * 2))
-    dc = DistCounters(int(estimator_size * 2), log_normal_function)
+    dc_limit_log_normal = None # dc_best_possible_are(trace, log_normal_function, estimator_size * 2)
+    adc = AutoDistCounters(int(estimator_size * 1))
+    dc = DistCounters(int(estimator_size * 1), log_normal_function)
     logger.info('eval dc...')
-    dc_result = evaluate(dc, trace)
+    dc_result = 0,0 #evaluate(dc, trace)
     logger.info('eval adc...')
     adc_result = evaluate(adc, trace)
     logger.info('eval rap...')
@@ -116,7 +114,7 @@ def process_trace(trace_file, trace_len, trace_ratio):
     return result 
 
 def plot_results(results):
-    trace_lengths = results['Estimator Length']
+    est_lengths = results['Estimator Length']
     dc_are = [result[0] for result in results['DistCounters']]
     adc_are = [result[0] for result in results['AutoDistCounters']]
     rap_are = [result[0] for result in results['RAP']]
@@ -126,11 +124,11 @@ def plot_results(results):
     fig, ax = plt.subplots(figsize=(10, 10))
     
     # Subplot 1: ARE
-    ax.plot(trace_lengths, dc_are, label='DistCounters', marker='o')
-    ax.plot(trace_lengths, adc_are, label='AutoDistCounters', marker='s')
-    ax.plot(trace_lengths, rap_are, label='RAP', marker='x')
-    ax.plot(trace_lengths, ss_are, label='SpaceSaving', marker='s')
-    ax.plot(trace_lengths, dc_limit_are, label='DistCountersLimit', marker='D')
+    ax.plot(est_lengths, dc_are, label='DistCounters', marker='o')
+    ax.plot(est_lengths, adc_are, label='AutoDistCounters', marker='s')
+    ax.plot(est_lengths, rap_are, label='RAP', marker='x')
+    ax.plot(est_lengths, ss_are, label='SpaceSaving', marker='s')
+    # ax.plot(trace_lengths, dc_limit_are, label='DistCountersLimit', marker='D')
     ax.set_xlabel('Estimator Length')
     ax.set_ylabel('ARE (Average Relative Error)')
     ax.set_title('ARE (Average Relative Error) Comparison')

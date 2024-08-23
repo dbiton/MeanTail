@@ -13,6 +13,14 @@ def zipfian_fit(x, a):
 def power_law_fit(x, a, b):
     return a * np.power(x, -b)
 
+def lognormal_fit_mean_variance(x, mean, variance):
+    # Convert variance to standard deviation (s)
+    stddev = np.sqrt(variance)
+    # Convert mean to scale parameter (exp(mean))
+    scale = np.exp(mean)
+    # Compute the PDF
+    return lognorm.pdf(x, stddev, scale=scale)
+
 def lognormal_fit(x, s, scale):
     return lognorm.pdf(x, s, scale=scale)
 
@@ -48,6 +56,13 @@ def estimate_params(packets: list):
     lognormal_residuals = frequency - lognormal_fit(rank, *lognormal_params)
     lognormal_ssr = np.sum(lognormal_residuals**2)
     
+    # Log-normal fit mean variance
+    len_hh = int(len(packets) * 0.00005)
+    lognormal_mean_variance_params, _ = curve_fit(lognormal_fit_mean_variance, rank[:len_hh], frequency[:len_hh], p0=[1.0, 1.0])
+    m_lognormal, v_lognormal = lognormal_mean_variance_params
+    lognormal__residuals = frequency - lognormal_fit_mean_variance(rank, *lognormal_params)
+    lognormal__ssr = np.sum(lognormal__residuals**2)
+    
     '''
     # Plot the data and the fitted curves
     plt.figure(figsize=(10, 6))
@@ -55,6 +70,7 @@ def estimate_params(packets: list):
     plt.plot(rank, zipfian_fit(rank, *zipf_params), 'r--', label=f'Zipfian fit (a={a_zipf:.2f})')
     plt.plot(rank, power_law_fit(rank, *power_law_params), 'g:', label=f'Power law fit (a={a_power_law:.2f}, b={b_power_law:.2f})')
     plt.plot(rank, lognormal_fit(rank, *lognormal_params), 'y-', label=f'Log-normal fit (s={s_lognormal:.2f}, scale={scale_lognormal:.2f})')
+    plt.plot(rank, lognormal_fit_mean_variance(rank, *lognormal_mean_variance_params), 'c-', label=f'Log-normal mean-variance fit (mean={m_lognormal:.2f}, variance={v_lognormal:.2f})')
     plt.xscale('log')
     plt.yscale('log')
     plt.xlabel('Rank')
@@ -63,11 +79,11 @@ def estimate_params(packets: list):
     plt.legend()
     plt.grid(True)
     plt.show()
+    '''
     
     print(f"SSR for Zipfian fit: {zipfian_ssr:.4f}")
     print(f"SSR for Power law fit: {power_law_ssr:.4f}")
     print(f"SSR for Log-normal fit: {lognormal_ssr:.4f}")
-    '''
     
     return {
         "Zipfian": a_zipf,
