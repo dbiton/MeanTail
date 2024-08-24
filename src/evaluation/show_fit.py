@@ -20,8 +20,9 @@ from evaluation.fit_zipfian import estimate_params
 
 def lognormal_fit_mean_variance(x, mean, variance):
     stddev = np.sqrt(variance)
-    scale = np.exp(mean)
-    return stats.lognorm.pdf(x, stddev, scale=scale)
+    coefficient = 1 / (x * stddev * np.sqrt(2 * np.pi))
+    exponent = -((np.log(x) - mean) ** 2) / (2 * variance)
+    return coefficient * np.exp(exponent)
 
 def read_trace(file_path, n=None):
     with open(file_path, "r") as file:
@@ -96,9 +97,9 @@ def worker(trace_len):
     return trace_len
 
 def main():
-    start_len = 10000
-    end_len = 10000000
-    num_jumps = 64
+    start_len = 1000
+    end_len = 100000
+    num_jumps = 16
     
     step_size = (end_len - start_len) // num_jumps
     trace_len_values = range(start_len, end_len + step_size, step_size)

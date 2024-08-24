@@ -56,6 +56,7 @@ def estimate_params(packets: list):
     lognormal_residuals = frequency - lognormal_fit(rank, *lognormal_params)
     lognormal_ssr = np.sum(lognormal_residuals**2)
     
+    '''
     # Log-normal fit mean variance
     len_hh = int(len(packets) * 0.00005)
     lognormal_mean_variance_params, _ = curve_fit(lognormal_fit_mean_variance, rank[:len_hh], frequency[:len_hh], p0=[1.0, 1.0])
@@ -63,7 +64,6 @@ def estimate_params(packets: list):
     lognormal__residuals = frequency - lognormal_fit_mean_variance(rank, *lognormal_params)
     lognormal__ssr = np.sum(lognormal__residuals**2)
     
-    '''
     # Plot the data and the fitted curves
     plt.figure(figsize=(10, 6))
     plt.plot(rank, frequency, 'b-', label='Data')
