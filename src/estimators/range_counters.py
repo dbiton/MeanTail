@@ -4,8 +4,11 @@ class Range:
     def __init__(self, size: int) -> None:
         self.size = size
         self.keys = []
-        self.average = 0
+        self.total = 0
     
+    def average(self) -> int:
+        return self.total / self.size
+
     def __contains__(self, key: int) -> bool:
         return key in self.keys
     
@@ -15,10 +18,11 @@ class Range:
     def update(self, key: int) -> str:
         if key not in self.keys:            
             if len(self.keys) < self.size:
+                self.total += 1
                 self.keys.append(key)
                 return "insert"
             else:
-                tresh = 1 / (self.average + 1)
+                tresh = 1 / (self.average() + 1)
                 if random() < tresh:
                     index = randint(0, self.size-1)
                     self.keys[index] = key
@@ -47,15 +51,19 @@ class RangeCounters:
             if result == "insert":
                 range_curr = self.ranges[range_index]
                 range_curr.remove(key)
+            elif result == "reject":
+                range_curr.total += 1
         else:
             min_counter_key = min(self.counters, key=self.counters.get)
             min_counter = self.counters[min_counter_key]
             tresh = 1 / (min_counter + 1)
+            range_curr = self.ranges[0]
             if random() < tresh:
                 del self.counters[min_counter_key]
                 self.counters[key] = min_counter + 1
-                range_curr = self.ranges[0]
                 range_curr.remove(key)
+            else:
+                range_curr.total += 1
     
     def update(self, key: int) -> None:
         # already tracked
@@ -80,5 +88,5 @@ class RangeCounters:
         if estimate == 0:
             for range in self.ranges:
                 if key in range:
-                    return range.average
-        return 0
+                    return range.average()
+        return estimate
