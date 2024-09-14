@@ -19,18 +19,36 @@ def read_trace(file_path, n=None):
             return [int(line.strip()) for line in file]
 
 trace_file = "src/traces/trace.txt"
-trace_len = 100000
-estimator_len = 1500
+trace_len = 1000000
+estimator_len = 10000
+print('read trace...')
 trace = read_trace(trace_file, trace_len)
+print('find actual counts...')
 actual_counts = Counter(trace)
+
 rap = RandomAdmissionPolicy(estimator_len)
-rc = RangeCounters(estimator_len//2)
-rc.add_range(estimator_len)
+rc = RangeCounters(estimator_len, 0.1)
+
+print('update:')
+i = 0
 for v in trace:
+    if i % (len(trace) // 10) == 0:
+        print('*', end="", flush=True)
+    i += 1
     rap.update(v, 1)
-    rc.update(v)
-rap_estimates = {k: rap.query(k) for k in actual_counts.keys()}
-rc_estimates = {k: rc.query(k) for k in actual_counts.keys()}
+    rc.update(v, 1)
+print("")
+print('query:')
+i = 0
+rap_estimates = {}
+rc_estimates = {}
+for k in actual_counts.keys():
+    if i % (len(actual_counts) // 10) == 0:
+        print('*', end="", flush=True)
+    i += 1
+    rap_estimates[k] = rap.query(k)
+    rc_estimates[k] = rc.query(k)
+print("")
 vs = [(k, actual_counts[k], rap_estimates[k], rc_estimates[k]) for k in actual_counts.keys()]
 vs = sorted(vs, key=lambda v: v[1])
 xs = list(range(len(vs)))

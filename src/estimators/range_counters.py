@@ -1,92 +1,54 @@
-from random import random, randint
+from random import random, randrange
 
-class Range:
-    def __init__(self, size: int) -> None:
-        self.size = size
-        self.keys = []
-        self.total = 0
-    
-    def average(self) -> int:
-        return self.total / self.size
+BYTES_PER_COUNTER = 4
+BYTES_PER_KEY = 4
 
-    def __contains__(self, key: int) -> bool:
-        return key in self.keys
-    
-    def remove(self, key: int) -> None:
-        self.keys.remove(key)
-    
-    def update(self, key: int) -> str:
-        if key not in self.keys:            
-            if len(self.keys) < self.size:
-                self.total += 1
-                self.keys.append(key)
-                return "insert"
-            else:
-                tresh = 1 / (self.average() + 1)
-                if random() < tresh:
-                    index = randint(0, self.size-1)
-                    self.keys[index] = key
-                    return "insert"
-                else:
-                    return "reject"
-        else:
-            return "present"
-            
-    
+
 class RangeCounters:
-    def __init__(self, size: int):
-        self.size = size
+    def __init__(self, size, mem_percentage_tail=0):
+        self.size = size * (1 - mem_percentage_tail)
         self.counters = {}
-        self.ranges = []
-    
-    def add_range(self, size: int) -> None:
-        assert len(self.ranges) == 0 or self.ranges[-1].size < size
-        range = Range(size)
-        self.ranges.append(range) 
-    
-    def promote(self, range_index: int, key: int):
-        if range_index > 0:
-            range_next = self.ranges[range_index-1]
-            result = range_next.update(key)
-            if result == "insert":
-                range_curr = self.ranges[range_index]
-                range_curr.remove(key)
-            elif result == "reject":
-                range_curr.total += 1
+        self.tail = []
+        self.tail_total = 0
+        coe_tail_mem = (BYTES_PER_COUNTER + BYTES_PER_KEY) / BYTES_PER_COUNTER
+        self.tail_size = size * mem_percentage_tail * coe_tail_mem
+
+    def tail_average(self):
+        return self.tail_total / len(self.tail)
+
+    def update_tail(self, key, value):
+        min_counter_index = min(self.counters, key=self.counters.get)
+        min_counter = self.counters[min_counter_index]
+        tresh = 1 / (min_counter + 1)
+        # assert min_counter >= self.tail_average()
+        if random() < tresh:
+            del self.counters[min_counter_index]
+            self.counters[key] = self.tail_average() + value
+            self.tail_total -= self.tail_average()
         else:
-            min_counter_key = min(self.counters, key=self.counters.get)
-            min_counter = self.counters[min_counter_key]
-            tresh = 1 / (min_counter + 1)
-            range_curr = self.ranges[0]
-            if random() < tresh:
-                del self.counters[min_counter_key]
-                self.counters[key] = min_counter + 1
-                range_curr.remove(key)
-            else:
-                range_curr.total += 1
-    
-    def update(self, key: int) -> None:
-        # already tracked
+            self.tail_total += value
+
+    def update(self, key, value):
         if key in self.counters:
-            self.counters[key] += 1
+            self.counters[key] += value
+        elif key in self.tail:
+            self.update_tail(key, value)
         else:
-            for i, range in enumerate(self.ranges):
-                if key in range:
-                    self.promote(i, key)
-                    return
-        
-        # key is not tracked
-        if len(self.counters) < self.size:
-            self.counters[key] = 1
-        else:
-            range = self.ranges[-1]
-            range.update(key)
+            if len(self.counters) < self.size:
+                self.counters[key] = value
+            elif len(self.tail) < self.tail_size:
+                self.tail.append(key)
+            else:
+                tail_counter = self.tail_average()
+                tresh = 1 / (tail_counter + 1)
+                if random() < tresh:
+                    self.tail_total += value
+                    self.tail[randrange(len(self.tail))] = key
 
-
-    def query(self, key: int) -> int:
+    def query(self, key):
         estimate = self.counters.get(key, 0)
-        if estimate == 0:
-            for range in self.ranges:
-                if key in range:
-                    return range.average()
-        return estimate
+        if estimate != 0:
+            return estimate
+        if key in self.tail:
+            return self.tail_total / len(self.tail)
+        return 0
