@@ -1,30 +1,49 @@
 from random import random, randrange
 
-BYTES_PER_COUNTER = 4
-BYTES_PER_KEY = 4
-
-
 class RangeCounters:
-    def __init__(self, size, mem_percentage_tail=0):
-        self.size = size * (1 - mem_percentage_tail)
+    def __init__(self, size, mem_percentage_tail=0.5):
+        self.size = int(size * (1 - mem_percentage_tail))
         self.counters = {}
         self.tail = []
         self.tail_total = 0
-        coe_tail_mem = (BYTES_PER_COUNTER + BYTES_PER_KEY) / BYTES_PER_COUNTER
-        self.tail_size = size * mem_percentage_tail * coe_tail_mem
+        self.tail_size = int(size * mem_percentage_tail * 2)
 
     def tail_average(self):
-        return self.tail_total / len(self.tail)
+        return self.tail_total / self.tail_size
+
+    def rebalance(self):
+        tail_average = self.tail_average()
+        min_counter_key = min(self.counters, key=self.counters.get)
+        min_counter = self.counters[min_counter_key]
+        if tail_average > 2 * min_counter:
+            print("tail!", len(self.counters), len(self.tail))
+            del self.counters[min_counter_key]
+            self.size -= 1
+            self.tail_size += 2
+            self.tail.append(min_counter_key)
+            self.tail_total += min_counter
+        if min_counter > 2 * tail_average and len(self.tail) >= 2:
+            print("hh!", len(self.counters), len(self.tail))
+            del self.counters[min_counter_key]
+            self.tail.pop()
+            self.counters[self.tail.pop()] = tail_average
+            self.size += 1
+            self.tail_size -= 2
+            self.tail_total -= tail_average * 2
+
 
     def update_tail(self, key, value):
-        min_counter_index = min(self.counters, key=self.counters.get)
-        min_counter = self.counters[min_counter_index]
-        tresh = 1 / (min_counter + 1)
-        # assert min_counter >= self.tail_average()
+        min_counter_key = min(self.counters, key=self.counters.get)
+        min_counter = self.counters[min_counter_key]
+        tail_average = self.tail_average()
+        tresh = tail_average / min_counter
+        # swap from tail to counters
         if random() < tresh:
-            del self.counters[min_counter_index]
-            self.counters[key] = self.tail_average() + value
-            self.tail_total -= self.tail_average()
+            del self.counters[min_counter_key]
+            self.counters[key] = tail_average + value
+            self.tail.remove(key)
+            self.tail.append(min_counter_key)
+            self.tail_total -= tail_average + min_counter
         else:
             self.tail_total += value
 
@@ -44,11 +63,13 @@ class RangeCounters:
                 if random() < tresh:
                     self.tail_total += value
                     self.tail[randrange(len(self.tail))] = key
+        if len(self.counters) + len(self.tail) >= self.size + self.tail_size:
+            self.rebalance()
 
     def query(self, key):
         estimate = self.counters.get(key, 0)
         if estimate != 0:
             return estimate
         if key in self.tail:
-            return self.tail_total / len(self.tail)
+            return max(1, self.tail_total / len(self.tail))
         return 0
