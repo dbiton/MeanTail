@@ -5,7 +5,7 @@
             "name": "Python: Debug main.py",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}/src/evaluation/trace.py",
+            "program": "${workspaceFolder}/src/evaluation/paper.py",
             "console": "integratedTerminal"
         }
     ]

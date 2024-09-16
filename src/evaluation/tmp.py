@@ -20,14 +20,14 @@ def read_trace(file_path, n=None):
 
 trace_file = "src/traces/trace.txt"
 trace_len = 1000000
-estimator_len = 10000
+estimator_len = 20000
 print('read trace...')
 trace = read_trace(trace_file, trace_len)
 print('find actual counts...')
 actual_counts = Counter(trace)
 
 rap = RandomAdmissionPolicy(estimator_len)
-rc = RangeCounters(estimator_len, 0.1)
+rc = RangeCounters(estimator_len, 0.01)
 
 print('update:')
 i = 0

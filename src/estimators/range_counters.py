@@ -3,7 +3,7 @@ import numpy as np
 
 
 class RangeCounters:
-    def __init__(self, size, mem_percentage_tail=0.2):
+    def __init__(self, size, mem_percentage_tail=0.1):
         self.counters_size = int(size * (1 - mem_percentage_tail))
         self.tail_size = int(size * mem_percentage_tail * 2)
         self.counters = {}
@@ -11,20 +11,20 @@ class RangeCounters:
         self.tail_total = 0
 
     def tail_average(self):
-        return max(1, self.tail_total / len(self.tail))
+        return round(max(1, self.tail_total / len(self.tail)))
 
     def rebalance(self):
         tail_average = self.tail_average()
         min_counter_key = min(self.counters, key=self.counters.get)
         min_counter = self.counters[min_counter_key]
-        if tail_average > 2 * min_counter and len(self.counters) > 1:
+        if tail_average > 1 > 0.75 * min_counter and len(self.counters) > 1:
             print("tail!", len(self.counters), len(self.tail))
             del self.counters[min_counter_key]
             self.counters_size -= 1
             self.tail_size += 2
             self.tail.append(min_counter_key)
             self.tail_total += min_counter
-        elif min_counter > 2 * tail_average and len(self.tail) > 2:
+        elif 1 < tail_average < 0.25 * min_counter and len(self.tail) > 2:
             print("hh!", len(self.counters), len(self.tail))
             del self.counters[min_counter_key]
             self.tail.pop()
@@ -74,6 +74,7 @@ class RangeCounters:
             min_counter = self.counters[min_counter_key]
             tail_average = self.tail_average()
             # print("taillen", len(self.tail), "tailavg", tail_average, "counterlen", len(self.counters), "countermin", min_counter)
+            self.rebalance()
 
     def query(self, key):
         estimate = self.counters.get(key, 0)

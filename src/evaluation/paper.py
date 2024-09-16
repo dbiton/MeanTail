@@ -25,7 +25,7 @@ def calculate_mse(estimator, actual_counts):
     i = 0
     for k, v in actual_counts.items():
         v_est = estimator.query(k)
-        squared_error = (v_est - v) ** 2
+        squared_error = abs(v_est - v) / v
         squared_errors[i] = squared_error
         i += 1
     return squared_errors.mean()
@@ -33,7 +33,7 @@ def calculate_mse(estimator, actual_counts):
 
 def main():
     trace_file = "src/traces/trace.txt"
-    trace_len = 100000
+    trace_len = 1000000
     print("read trace...")
     trace = read_trace(trace_file, trace_len)
     print("find actual counts...")
@@ -42,7 +42,7 @@ def main():
     estimator_lengths = []
     mse_values = {"FR": [], "SS": [], "RAP": [], "RC": []}
 
-    for estimator_exp in np.linspace(4,12,32):
+    for estimator_exp in np.linspace(8,14,10):
         print("*", end="", flush=True)
         estimator_length = 2 ** estimator_exp
         estimator_lengths.append(estimator_length)
