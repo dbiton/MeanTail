@@ -17,14 +17,14 @@ class RangeCounters:
         tail_average = self.tail_average()
         min_counter_key = min(self.counters, key=self.counters.get)
         min_counter = self.counters[min_counter_key]
-        if tail_average > 1 > 0.75 * min_counter and len(self.counters) > 1:
+        if  1 < tail_average < 0.25 * min_counter and len(self.counters) > 1:
             print("tail!", len(self.counters), len(self.tail))
             del self.counters[min_counter_key]
             self.counters_size -= 1
             self.tail_size += 2
             self.tail.append(min_counter_key)
             self.tail_total += min_counter
-        elif 1 < tail_average < 0.25 * min_counter and len(self.tail) > 2:
+        elif tail_average > 1 > 0.75 * min_counter and len(self.tail) > 2:
             print("hh!", len(self.counters), len(self.tail))
             del self.counters[min_counter_key]
             self.tail.pop()
