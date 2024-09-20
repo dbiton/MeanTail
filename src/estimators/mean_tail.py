@@ -1,7 +1,6 @@
 from random import random, randrange
 import numpy as np
 
-
 class MeanTail:
     def __init__(self, size, mem_percentage_tail=0.1):
         self.counters_size = int(size * (1 - mem_percentage_tail))
@@ -13,26 +12,27 @@ class MeanTail:
     def tail_average(self):
         return round(max(1, self.tail_total / len(self.tail)))
 
+    '''
     def balance(self):
         tail_average = self.tail_average()
         min_counter_key = min(self.counters, key=self.counters.get)
         min_counter = self.counters[min_counter_key]
-        if  1 < tail_average < 0.25 * min_counter and len(self.counters) > 1:
-            # print("tail!", len(self.counters), len(self.tail))
+        if  1 < tail_average < 0.25 * min_counter and len(self.counters) > 2:
+            print("tail!", len(self.counters), len(self.tail))
             del self.counters[min_counter_key]
             self.counters_size -= 1
             self.tail_size += 2
             self.tail.append(min_counter_key)
             self.tail_total += min_counter
         elif tail_average > 1 > 0.75 * min_counter and len(self.tail) > 2:
-            # print("hh!", len(self.counters), len(self.tail))
+            print("hh!", len(self.counters), len(self.tail))
             del self.counters[min_counter_key]
             self.tail.pop()
             self.counters[self.tail.pop()] = tail_average
             self.counters_size += 1
             self.tail_size -= 2
             self.tail_total -= tail_average * 2
-
+        '''
 
     def attempt_promote_to_counters(self, key, value):
         min_counter_key = min(self.counters, key=self.counters.get)
@@ -46,7 +46,7 @@ class MeanTail:
             self.counters[key] = tail_average + value
             self.tail.remove(key)
             self.tail.append(min_counter_key)
-            self.tail_total -= tail_average + min_counter
+            self.tail_total += min_counter - tail_average
         else:
             self.tail_total += value
 
@@ -65,16 +65,18 @@ class MeanTail:
         elif len(self.counters) < self.counters_size:
             self.counters[key] = value
         elif len(self.tail) < self.tail_size:
+            self.tail_total += value
             self.tail.append(key)
         else:
             self.attempt_promote_to_tail(key, value)
         
+        '''
         if len(self.tail) > 0:
             min_counter_key = min(self.counters, key=self.counters.get)
             min_counter = self.counters[min_counter_key]
             tail_average = self.tail_average()
             # print("taillen", len(self.tail), "tailavg", tail_average, "counterlen", len(self.counters), "countermin", min_counter)
-            # self.rebalance()
+            # self.balance()'''
 
     def query(self, key):
         estimate = self.counters.get(key, 0)
