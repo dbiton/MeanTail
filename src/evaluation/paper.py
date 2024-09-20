@@ -2,6 +2,7 @@ import math
 import sys
 import os
 
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import numpy as np
@@ -9,9 +10,10 @@ import matplotlib.pyplot as plt
 from collections import Counter
 from estimators.count_min import CountMin
 from estimators.frequent import Frequent
+from estimators.effective_space_saving import EffectiveSpaceSaving
 from estimators.space_saving import SpaceSaving
 from estimators.rap import RandomAdmissionPolicy
-from estimators.range_counters import RangeCounters
+from estimators.mean_tail import MeanTail
 from multiprocessing import Pool
 from datetime import datetime
 
@@ -32,9 +34,9 @@ def calculate_mse(estimator, actual_counts):
 
 # Process each trace file
 def process_trace(trace_file):
-    linestyles = ['-', '--', ':', "-."] 
-    markers = ['o', 's', 'D', '^']
-    trace_len = 10000
+    linestyles = ['-', '--', ':', "-.", "solid"] 
+    markers = ['o', 's', 'D', '^', '*']
+    trace_len = 100000 
     
     # Get the start time
     start_time = datetime.now()
@@ -44,19 +46,20 @@ def process_trace(trace_file):
     actual_counts = Counter(trace)
 
     estimator_lengths = []
-    mse_values = {"SS": [], "RAP": [], "RC": [], "FR": []}
+    mse_values = {"SS": [], "RAP": [], "MT": [], "FR": [], "ESS": []}
 
-    log2_count_keys = math.ceil(math.log2(len(actual_counts))) - 1
+    log2_count_keys = math.ceil(math.log2(len(actual_counts)))
 
     # Run experiments with different estimators
-    for estimator_exp in np.linspace(4,log2_count_keys,log2_count_keys-3):
+    for estimator_exp in np.linspace(4,log2_count_keys,2*(log2_count_keys-3)):
         estimator_length = 2 ** estimator_exp
         estimator_lengths.append(estimator_length)
         estimators = {
             "FR": Frequent(estimator_length),
             "SS": SpaceSaving(estimator_length),
+            "ESS": EffectiveSpaceSaving(estimator_length, 0.125),
             "RAP": RandomAdmissionPolicy(estimator_length),
-            "RC": RangeCounters(estimator_length),
+            "MT": MeanTail(estimator_length, 0.125),
         }
         for estimator_name, estimator in estimators.items():
             for k in trace:
@@ -89,7 +92,7 @@ def process_trace(trace_file):
 
 # Main function to execute in parallel
 def main():
-    trace_dir = "src/traces/"
+    trace_dir = "C:/Users/User/Desktop/Projects/DistCounters/src/traces"
     
     # Get all .trace files in the directory
     trace_files = [os.path.join(trace_dir, f) for f in os.listdir(trace_dir) if f.endswith(".trace")]

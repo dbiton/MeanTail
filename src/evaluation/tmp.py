@@ -8,7 +8,7 @@ from collections import Counter
 import matplotlib.pyplot as plt
 
 from estimators.rap import RandomAdmissionPolicy
-from estimators.range_counters import RangeCounters
+from src.estimators.mean_tail import MeanTail
 
 
 def read_trace(file_path, n=None):
@@ -27,7 +27,7 @@ print('find actual counts...')
 actual_counts = Counter(trace)
 
 rap = RandomAdmissionPolicy(estimator_len)
-rc = RangeCounters(estimator_len, 0.01)
+rc = MeanTail(estimator_len, 0.01)
 
 print('update:')
 i = 0
