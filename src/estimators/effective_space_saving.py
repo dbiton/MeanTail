@@ -1,9 +1,9 @@
 from random import random
 
 class EffectiveSpaceSaving:
-    def __init__(self, size_counters, size_candidates):
-        self.size_counters = size_counters
-        self.size_candidates = size_candidates
+    def __init__(self, size, mem_percentage_candidates):
+        self.size_counters = int(size * (1-mem_percentage_candidates))
+        self.size_candidates = int(size * mem_percentage_candidates)
         self.counters = {}
         self.candidates = {}
  

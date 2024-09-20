@@ -8,7 +8,7 @@ from collections import Counter
 import matplotlib.pyplot as plt
 
 from estimators.rap import RandomAdmissionPolicy
-from src.estimators.mean_tail import MeanTail
+from estimators.mean_tail import MeanTail
 
 
 def read_trace(file_path, n=None):
@@ -18,16 +18,16 @@ def read_trace(file_path, n=None):
         else:
             return [int(line.strip()) for line in file]
 
-trace_file = "src/traces/trace.txt"
-trace_len = 1000000
-estimator_len = 20000
+trace_file = "src/traces/youtube.trace"
+trace_len = 100000
+estimator_len = 2**10
 print('read trace...')
 trace = read_trace(trace_file, trace_len)
 print('find actual counts...')
 actual_counts = Counter(trace)
 
 rap = RandomAdmissionPolicy(estimator_len)
-rc = MeanTail(estimator_len, 0.01)
+rc = MeanTail(estimator_len, 0.125)
 
 print('update:')
 i = 0
@@ -55,16 +55,16 @@ xs = list(range(len(vs)))
 ys_actual = [v[1] for v in vs]
 ys_rap = [v[2] for v in vs]
 ys_rc = [v[3] for v in vs]
-es_rap = [abs(y_rap - y_actual) for y_rap, y_actual in zip(ys_rap, ys_actual)]
-es_rc = [abs(y_rc - y_actual) for y_rc, y_actual in zip(ys_rc, ys_actual)]
+es_rap = [(y_rap - y_actual)**2 for y_rap, y_actual in zip(ys_rap, ys_actual)]
+es_rc = [(y_rc - y_actual)**2 for y_rc, y_actual in zip(ys_rc, ys_actual)]
 
 
-print("RAP", np.average(es_rap), "RC", np.average(es_rc))
+print("RAP", np.average(es_rap), "MT", np.average(es_rc))
 
-plt.figure(figsize=(8, 8))
+plt.figure()
 plt.plot(xs, ys_actual, 'b:', label='Data')
 plt.plot(xs, ys_rap, 'g-', label=f'RAP')
-plt.plot(xs, ys_rc, 'r-', label=f'RC')
+plt.plot(xs, ys_rc, 'r-', label=f'MT')
 # plt.xscale("log")
 # plt.yscale("log")
 plt.title(len(trace))
