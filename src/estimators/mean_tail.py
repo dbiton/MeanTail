@@ -38,10 +38,8 @@ class MeanTail:
         min_counter_key = min(self.counters, key=self.counters.get)
         min_counter = self.counters[min_counter_key]
         tail_average = self.tail_average()
-        if not min_counter >= tail_average:
-            print(min_counter, tail_average)
-        assert min_counter >= tail_average
-        thresh = value / (1 + min_counter - tail_average)
+        divisor = max(1, 1 + min_counter - tail_average)
+        thresh = value / divisor
         # swap from tail to counters
         if random() < thresh:
             del self.counters[min_counter_key]
