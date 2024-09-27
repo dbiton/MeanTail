@@ -34,9 +34,9 @@ def calculate_mse(estimator, actual_counts):
 
 # Process each trace file
 def process_trace(trace_file):
-    linestyles = ['-', '--', ':', "-.", "solid"] * 2 
-    markers = ['o', 's', 'D', '^', '*'] * 2
-    trace_len = 10000
+    linestyles = ['-', '--', ':', "-."] * 2 
+    markers = ['o', 's', 'D', '^', '*', '>'] * 2
+    trace_len = 100000
     
     # Get the start time
     start_time = datetime.now()
@@ -51,12 +51,12 @@ def process_trace(trace_file):
     log2_count_keys = math.ceil(math.log2(len(actual_counts)))
 
     # Run experiments with different estimators
-    for estimator_exp in np.linspace(6,log2_count_keys,2*(log2_count_keys-3)):
+    for estimator_exp in np.linspace(log2_count_keys-3,log2_count_keys,20):
         estimator_length = 2 ** estimator_exp
         estimator_lengths.append(estimator_length)
         estimators = {
-            "FR": Frequent(estimator_length),
-            "SS": SpaceSaving(estimator_length),
+            # "FR": Frequent(estimator_length),
+            # "SS": SpaceSaving(estimator_length),
             # "ESS": EffectiveSpaceSaving(estimator_length, 0.125),
             "RAP": RandomAdmissionPolicy(estimator_length),
             "MT16": MeanTail(estimator_length, 0.0625),

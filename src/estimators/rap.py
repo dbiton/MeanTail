@@ -14,8 +14,8 @@ class RandomAdmissionPolicy:
           else:
             min_counter_index = min(self.counters, key=self.counters.get)
             min_counter = self.counters[min_counter_index]
-            tresh = 1 / (min_counter + 1)
-            if random() < tresh:
+            thresh = 1 / (min_counter + 1)
+            if random() < thresh:
               del self.counters[min_counter_index]
               self.counters[index] = min_counter + value
 

@@ -10,29 +10,7 @@ class MeanTail:
         self.tail_total = 0
 
     def tail_average(self):
-        return round(max(1, self.tail_total / len(self.tail)))
-
-    '''
-    def balance(self):
-        tail_average = self.tail_average()
-        min_counter_key = min(self.counters, key=self.counters.get)
-        min_counter = self.counters[min_counter_key]
-        if  1 < tail_average < 0.25 * min_counter and len(self.counters) > 2:
-            print("tail!", len(self.counters), len(self.tail))
-            del self.counters[min_counter_key]
-            self.counters_size -= 1
-            self.tail_size += 2
-            self.tail.append(min_counter_key)
-            self.tail_total += min_counter
-        elif tail_average > 1 > 0.75 * min_counter and len(self.tail) > 2:
-            print("hh!", len(self.counters), len(self.tail))
-            del self.counters[min_counter_key]
-            self.tail.pop()
-            self.counters[self.tail.pop()] = tail_average
-            self.counters_size += 1
-            self.tail_size -= 2
-            self.tail_total -= tail_average * 2
-        '''
+        return self.tail_total / len(self.tail)
 
     def attempt_promote_to_counters(self, key, value):
         min_counter_key = min(self.counters, key=self.counters.get)
@@ -69,19 +47,11 @@ class MeanTail:
             self.tail.append(key)
         else:
             self.attempt_promote_to_tail(key, value)
-        
-        '''
-        if len(self.tail) > 0:
-            min_counter_key = min(self.counters, key=self.counters.get)
-            min_counter = self.counters[min_counter_key]
-            tail_average = self.tail_average()
-            # print("taillen", len(self.tail), "tailavg", tail_average, "counterlen", len(self.counters), "countermin", min_counter)
-            # self.balance()'''
 
     def query(self, key):
         estimate = self.counters.get(key, 0)
         if estimate != 0:
             return estimate
         if key in self.tail:
-            return max(1, self.tail_total / len(self.tail))
+            return max(1, round(self.tail_average()))
         return 0
