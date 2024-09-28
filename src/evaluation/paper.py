@@ -36,7 +36,7 @@ def calculate_mse(estimator, actual_counts):
 def process_trace(trace_file):
     linestyles = ['-', '--', ':', "-."] * 2 
     markers = ['o', 's', 'D', '^', '*', '>'] * 2
-    trace_len = 100000
+    trace_len = 1000
     
     # Get the start time
     start_time = datetime.now()
@@ -78,7 +78,7 @@ def process_trace(trace_file):
         plt.plot(estimator_lengths, mse_list, label=estimator_name, marker=markers[i], linestyle=linestyles[i])
         i += 1
 
-    legend = plt.legend()
+    legend = plt.legend(ncol=len(estimators))    
     plt.xscale("log", base=2)
     plt.yscale("log", base=10)
     plt.xlabel("Estimator Length")
@@ -102,7 +102,7 @@ def process_trace(trace_file):
 
 # Main function to execute in parallel
 def main():
-    trace_dir = "C:/Users/User/Desktop/Projects/DistCounters/src/traces"
+    trace_dir = "./src/traces"
     
     # Get all .trace files in the directory
     trace_files = [os.path.join(trace_dir, f) for f in os.listdir(trace_dir) if f.endswith(".trace")]
