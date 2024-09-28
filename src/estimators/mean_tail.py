@@ -24,7 +24,7 @@ class MeanTail:
             self.counters[key] = tail_average + value
             self.tail.remove(key)
             self.tail.append(min_counter_key)
-            self.tail_total += min_counter - tail_average
+            # self.tail_total += min_counter - tail_average
         else:
             self.tail_total += value
 
