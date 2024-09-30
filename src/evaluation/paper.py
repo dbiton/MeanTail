@@ -32,12 +32,22 @@ def calculate_mse(estimator, actual_counts):
     errors = [(v_est - v)**2 for v_est, v in zip(estimates, actual_counts.values())]
     return np.average(errors)
 
+def calculate_recall(estimator, actual_counts, count_hh):
+    top_k_pairs = sorted(actual_counts.items(), key=lambda item: item[1], reverse=True)[:count_hh]
+    top_k = [p[0] for p in top_k_pairs]
+    estimates = [estimator.query(k) for k in top_k]
+    TP = len([e for e in estimates if e > 0])
+    FN = len(estimates) - TP
+    recall = TP / (TP + FN)
+    return recall
+
 # Process each trace file
 def process_trace(trace_file):
     linestyles = ['-', '--', ':', "-."] * 2 
     markers = ['o', 's', 'D', '^', '*', '>'] * 2
     trace_len = 1000
-    
+    recall_heavy_hitters = 1000
+
     # Get the start time
     start_time = datetime.now()
     print(f"Start processing {trace_file} at {start_time}")
@@ -47,6 +57,7 @@ def process_trace(trace_file):
 
     estimator_lengths = []
     mse_values = {}
+    recall_values = {}
 
     log2_count_keys = math.ceil(math.log2(len(actual_counts)))
 
@@ -67,9 +78,13 @@ def process_trace(trace_file):
             for k in trace:
                 estimator.update(k, 1)
             mse = calculate_mse(estimator, actual_counts)
+            recall = calculate_recall(estimator, actual_counts, recall_heavy_hitters)
             if estimator_name not in mse_values:
                 mse_values[estimator_name] = []
+                recall_values[estimator_name] = []
             mse_values[estimator_name].append(mse)
+            recall_values[estimator_name].append(recall)
+
 
     # Plotting the results
     plt.figure()
@@ -78,7 +93,6 @@ def process_trace(trace_file):
         plt.plot(estimator_lengths, mse_list, label=estimator_name, marker=markers[i], linestyle=linestyles[i])
         i += 1
 
-    legend = plt.legend(ncol=len(estimators))    
     plt.xscale("log", base=2)
     plt.yscale("log", base=10)
     plt.xlabel("Estimator Length")
@@ -86,15 +100,33 @@ def process_trace(trace_file):
     plt.tight_layout()
     
     # Save the graph with the trace file name
-    output_file = f"{os.path.splitext(os.path.basename(trace_file))[0]}.png"
+    output_file = f"mse_{os.path.splitext(os.path.basename(trace_file))[0]}.png"
     plt.savefig(output_file)
 
+    legend = plt.legend(ncol=len(estimators))    
     # save legend as figure
     fig  = legend.figure
     fig.canvas.draw()
     bbox = legend.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
     fig.savefig('legend', dpi="figure", bbox_inches=bbox)
     
+
+    # Plotting the results
+    plt.figure()
+    i = 0
+    for estimator_name, recall_list in recall_values.items():
+        plt.plot(estimator_lengths, recall_list, label=estimator_name, marker=markers[i], linestyle=linestyles[i])
+        i += 1
+
+    plt.xlabel("Estimator Length")
+    plt.ylabel("Recall")
+    plt.legend()
+    plt.tight_layout()
+    
+    # Save the graph with the trace file name
+    output_file = f"recall_{os.path.splitext(os.path.basename(trace_file))[0]}.png"
+    plt.savefig(output_file)
+
     # Get the end time and print it
     end_time = datetime.now()
     print(f"Finished processing {trace_file} at {end_time}, saved as {output_file}")
