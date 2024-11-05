@@ -55,8 +55,8 @@ def calculate_mt_length(int_count, tail_percentage):
 def process_trace(trace_file):
     linestyles = ["-", "--", ":", "-."] * 2
     markers = ["o", "s", "D", "^", "*", ">"] * 2
-    trace_len = 100000
-    recall_heavy_hitters = 1000
+    trace_len = 1000000
+    recall_heavy_hitters = 10000
 
     # Get the start time
     start_time = datetime.now()
@@ -112,10 +112,12 @@ def process_trace(trace_file):
 
     plt.xscale("log", base=2)
     plt.yscale("log", base=10)
-    plt.xlabel("Memory Usage (Bytes)")
-    plt.ylabel("Mean Squared Error")
+    plt.xlabel("Memory Usage (Bytes)", fontsize=16)
+    plt.ylabel("Mean Squared Error", fontsize=16)
+    plt.xticks(fontsize=12)  # Set font size for x-axis tick labels
+    plt.yticks(fontsize=12)  # Set font size for y-axis tick labels
     plt.tight_layout()
-
+  
     # Save the graph with the trace file name
     output_file = f"mse_{os.path.splitext(os.path.basename(trace_file))[0]}.png"
     plt.savefig(output_file)
@@ -140,9 +142,11 @@ def process_trace(trace_file):
         )
         i += 1
 
-    plt.xlabel("Memory Usage (Bytes)")
-    plt.ylabel("Recall")
-    plt.legend()
+    plt.xscale("log", base=2)
+    plt.xlabel("Memory Usage (Bytes)", fontsize=16)
+    plt.ylabel("Recall", fontsize=16)
+    plt.xticks(fontsize=12)  # Set font size for x-axis tick labels
+    plt.yticks(fontsize=12)  # Set font size for y-axis tick labels
     plt.tight_layout()
 
     # Save the graph with the trace file name
