@@ -9,6 +9,9 @@ class MeanTail:
         self.tail = []
         self.tail_total = 0
 
+    def memory_usage(self):
+        return (self.counters_size * 2 + self.tail_size) * 4
+
     def tail_average(self):
         return self.tail_total / len(self.tail)
 

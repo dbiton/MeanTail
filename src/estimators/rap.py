@@ -4,7 +4,10 @@ class RandomAdmissionPolicy:
     def __init__(self, size):
         self.size = size
         self.counters = {}
- 
+  
+    def memory_usage(self):
+      return self.size * 2 * 4
+
     def update(self, index, value):
         if index in self.counters:
             self.counters[index] += value
